@@ -16,7 +16,10 @@ def index():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """提供静态文件（CSS、JS等）"""
+    """提供静态文件（CSS、JS、图片等）"""
+    # 确保图片文件可以被正确提供
+    if path.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico')):
+        return send_from_directory('.', path, mimetype='image/png' if path.endswith('.png') else None)
     return send_from_directory('.', path)
 
 if __name__ == '__main__':

@@ -1,16 +1,3 @@
-// 高德地图实例
-let map = null;
-let markers = [];
-
-// 初始化地图
-function initMap() {
-    map = new AMap.Map('mapContainer', {
-        zoom: 12,
-        center: [116.397428, 39.90923], // 北京中心
-        mapStyle: 'amap://styles/normal'
-    });
-}
-
 // 显示加载状态
 function showLoading() {
     document.getElementById('loading').style.display = 'flex';
@@ -19,31 +6,6 @@ function showLoading() {
 // 隐藏加载状态
 function hideLoading() {
     document.getElementById('loading').style.display = 'none';
-}
-
-// 清空地图标记
-function clearMarkers() {
-    markers.forEach(marker => {
-        map.remove(marker);
-    });
-    markers = [];
-}
-
-// 在地图上添加标记
-function addMarker(lng, lat, title, iconColor = 'blue') {
-    const marker = new AMap.Marker({
-        position: [lng, lat],
-        title: title,
-        icon: new AMap.Icon({
-            size: new AMap.Size(32, 32),
-            image: `https://webapi.amap.com/theme/v1.3/markers/n/${iconColor}.png`,
-            imageOffset: new AMap.Pixel(0, 0),
-            imageSize: new AMap.Size(32, 32)
-        })
-    });
-    marker.setMap(map);
-    markers.push(marker);
-    return marker;
 }
 
 // 格式化距离
@@ -156,14 +118,6 @@ function createShopCard(shop, distance1, distance2) {
         </div>
     `;
     
-    // 点击卡片时定位到地图
-    card.addEventListener('click', () => {
-        if (shop.location) {
-            map.setCenter([shop.location.lng, shop.location.lat]);
-            map.setZoom(16);
-        }
-    });
-    
     return card;
 }
 
@@ -198,7 +152,7 @@ async function searchMeetingPlaces() {
             // 如果返回的不是JSON，可能是HTML错误页面
             const text = await response.text();
             if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-                throw new Error('后端服务器未正确运行。请确保已运行: npm start');
+                throw new Error('后端服务器未正确运行。请确保已运行: python3 server.py');
             }
             throw new Error('服务器返回了非JSON响应: ' + text.substring(0, 100));
         }
@@ -211,40 +165,14 @@ async function searchMeetingPlaces() {
         const data = await response.json();
         
         // 清空之前的结果
-        clearMarkers();
         document.getElementById('resultsList').innerHTML = '';
-        
-        // 显示用户位置
-        if (data.user1Location) {
-            addMarker(data.user1Location.lng, data.user1Location.lat, '用户A', 'red');
-        }
-        if (data.user2Location) {
-            addMarker(data.user2Location.lng, data.user2Location.lat, '用户B', 'green');
-        }
         
         // 显示推荐地点
         if (data.recommendations && data.recommendations.length > 0) {
             data.recommendations.forEach((shop, index) => {
-                if (shop.location) {
-                    addMarker(shop.location.lng, shop.location.lat, shop.name, 'blue');
-                }
-                
-                const card = createShopCard(shop, shop.distance1, shop.distance2);
+                const card = createShopCard(shop, shop.distance1 || 0, shop.distance2 || 0);
                 document.getElementById('resultsList').appendChild(card);
             });
-            
-            // 调整地图视野
-            if (data.user1Location && data.user2Location) {
-                const bounds = new AMap.Bounds();
-                bounds.extend([data.user1Location.lng, data.user1Location.lat]);
-                bounds.extend([data.user2Location.lng, data.user2Location.lat]);
-                data.recommendations.forEach(shop => {
-                    if (shop.location) {
-                        bounds.extend([shop.location.lng, shop.location.lat]);
-                    }
-                });
-                map.setBounds(bounds);
-            }
             
             document.getElementById('resultsSection').style.display = 'block';
         } else {
@@ -258,11 +186,11 @@ async function searchMeetingPlaces() {
         if (error.message.includes('Failed to fetch') || 
             error.message.includes('NetworkError') ||
             error.message.includes('fetch')) {
-            errorMessage = '无法连接到后端服务器！\n\n请确保：\n1. 后端服务器已启动（运行: npm start）\n2. 服务器运行在 http://localhost:3000\n3. 网络连接正常';
+            errorMessage = '无法连接到后端服务器！\n\n请确保：\n1. 后端服务器已启动（运行: python3 server.py）\n2. 服务器运行在 http://localhost:3000\n3. 网络连接正常';
         } else if (error.message.includes('后端服务器未正确运行')) {
             errorMessage = error.message;
         } else if (error.message.includes('Unexpected token')) {
-            errorMessage = '服务器返回了错误格式的数据。\n\n可能原因：\n1. 后端服务器未运行\n2. API路径不正确\n3. 服务器返回了HTML而不是JSON\n\n请检查后端服务器是否正常运行（npm start）';
+            errorMessage = '服务器返回了错误格式的数据。\n\n可能原因：\n1. 后端服务器未运行\n2. API路径不正确\n3. 服务器返回了HTML而不是JSON\n\n请检查后端服务器是否正常运行（python3 server.py）';
         }
         
         alert(errorMessage);
@@ -273,8 +201,6 @@ async function searchMeetingPlaces() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    
     document.getElementById('searchBtn').addEventListener('click', searchMeetingPlaces);
     
     // 支持回车键搜索

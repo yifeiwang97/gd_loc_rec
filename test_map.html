@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #mapContainer {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #ccc;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>高德地图加载测试</h1>
+    <div id="status" class="status">正在加载地图API...</div>
+    <div id="mapContainer"></div>
+    
+    <script type="text/javascript">
+        // 检查API Key
+        const apiKey = '010cddd40d16a82dc3d1e70373bc393e';
+        
+        // 加载状态
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+            console.log(message);
+        }
+        
+        // API加载完成回调
+        window.onAMapLoaded = function() {
+            updateStatus('✅ 高德地图API加载成功');
+            
+            try {
+                const map = new AMap.Map('mapContainer', {
+                    zoom: 12,
+                    center: [116.397428, 39.90923], // 北京中心
+                    viewMode: '2D'
+                });
+                
+                map.on('complete', function() {
+                    updateStatus('✅ 地图加载完成！');
+                });
+                
+                map.on('error', function(e) {
+                    updateStatus('❌ 地图加载错误: ' + JSON.stringify(e), true);
+                });
+                
+                // 添加一个标记测试
+                const marker = new AMap.Marker({
+                    position: [116.397428, 39.90923],
+                    title: '测试标记'
+                });
+                marker.setMap(map);
+                
+            } catch (error) {
+                updateStatus('❌ 地图初始化失败: ' + error.message, true);
+            }
+        };
+        
+        // 错误处理
+        window.onerror = function(msg, url, line) {
+            if (msg.includes('AMap') || msg.includes('高德')) {
+                updateStatus('❌ API加载错误: ' + msg, true);
+            }
+        };
+        
+        // 加载API
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}&callback=onAMapLoaded`;
+        script.onerror = function() {
+            updateStatus('❌ 无法加载高德地图API脚本，请检查：\n1. API Key是否正确\n2. 网络连接是否正常', true);
+        };
+        document.head.appendChild(script);
+        
+        // 超时检查
+        setTimeout(() => {
+            if (typeof AMap === 'undefined') {
+                updateStatus('❌ API加载超时（10秒），可能的原因：\n1. API Key无效\n2. 网络问题\n3. 高德服务异常', true);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

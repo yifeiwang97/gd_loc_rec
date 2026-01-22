@@ -32,9 +32,27 @@ def geocode_address(address):
         data = response.json()
         
         if data.get('status') == '1' and data.get('geocodes'):
-            location_str = data['geocodes'][0]['location']
-            lng, lat = map(float, location_str.split(','))
-            return {'lng': lng, 'lat': lat}
+            location_str = data['geocodes'][0].get('location', '')
+            if not location_str:
+                raise Exception("地址解析返回的location为空")
+            
+            try:
+                parts = location_str.split(',')
+                if len(parts) != 2:
+                    raise ValueError(f"location格式错误，应为'经度,纬度'，实际: {location_str}")
+                
+                lng = float(parts[0].strip())
+                lat = float(parts[1].strip())
+                
+                # 验证坐标有效性
+                if math.isnan(lng) or math.isnan(lat):
+                    raise ValueError(f"坐标包含NaN: lng={lng}, lat={lat}")
+                if not (-180 <= lng <= 180 and -90 <= lat <= 90):
+                    raise ValueError(f"坐标超出有效范围: lng={lng}, lat={lat}")
+                
+                return {'lng': lng, 'lat': lat}
+            except (ValueError, IndexError, AttributeError) as e:
+                raise Exception(f"坐标解析失败: {e}, location_str={location_str}")
         else:
             raise Exception(f"地址解析失败: {data.get('info', '未知错误')}")
     except Exception as e:
@@ -62,17 +80,36 @@ def search_poi(keywords, location, radius=5000):
             for poi in data['pois']:
                 location_str = poi.get('location', '')
                 if location_str:
-                    lng, lat = map(float, location_str.split(','))
-                    pois.append({
-                        'id': poi.get('id'),
-                        'name': poi.get('name', ''),
-                        'location': {'lng': lng, 'lat': lat},
-                        'address': poi.get('address', '') or 
-                                  (poi.get('pname', '') + poi.get('cityname', '') + 
-                                   poi.get('adname', '') + poi.get('address', '')),
-                        'tel': poi.get('tel', ''),
-                        'distance': float(poi.get('distance', 0))
-                    })
+                    try:
+                        parts = location_str.split(',')
+                        if len(parts) != 2:
+                            print(f"警告: 跳过location格式错误的POI: {poi.get('name')}, location={location_str}")
+                            continue
+                        
+                        lng = float(parts[0].strip())
+                        lat = float(parts[1].strip())
+                        
+                        # 验证坐标有效性
+                        if math.isnan(lng) or math.isnan(lat):
+                            print(f"警告: 跳过包含NaN坐标的POI: {poi.get('name')}, lng={lng}, lat={lat}")
+                            continue
+                        if not (-180 <= lng <= 180 and -90 <= lat <= 90):
+                            print(f"警告: 跳过坐标超出范围的POI: {poi.get('name')}, lng={lng}, lat={lat}")
+                            continue
+                        
+                        pois.append({
+                            'id': poi.get('id'),
+                            'name': poi.get('name', ''),
+                            'location': {'lng': lng, 'lat': lat},
+                            'address': poi.get('address', '') or 
+                                      (poi.get('pname', '') + poi.get('cityname', '') + 
+                                       poi.get('adname', '') + poi.get('address', '')),
+                            'tel': poi.get('tel', ''),
+                            'distance': float(poi.get('distance', 0))
+                        })
+                    except (ValueError, IndexError, AttributeError) as e:
+                        print(f"警告: 跳过坐标解析失败的POI: {poi.get('name')}, 错误: {e}, location={location_str}")
+                        continue
             return pois
         return []
     except Exception as e:
