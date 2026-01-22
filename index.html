@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双人集合地点推荐 - Let's Meet</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 请将 YOUR_AMAP_KEY 替换为您的高德地图JS API Key -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=010cddd40d16a82dc3d1e70373bc393e"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部区域 -->
+        <header class="header">
+            <h1 class="title">Let's Meet</h1>
+            <p class="subtitle">找到最适合你们的集合地点</p>
+        </header>
+
+        <!-- 输入区域 -->
+        <section class="input-section">
+            <div class="input-group">
+                <label for="location1">用户A的位置</label>
+                <input type="text" id="location1" placeholder="请输入北京市内的地点，如：三里屯" />
+            </div>
+            <div class="input-group">
+                <label for="location2">用户B的位置</label>
+                <input type="text" id="location2" placeholder="请输入北京市内的地点，如：国贸" />
+            </div>
+            <button id="searchBtn" class="search-btn">寻找集合地点</button>
+        </section>
+
+        <!-- 地图区域 -->
+        <section class="map-section">
+            <div id="mapContainer" class="map-container"></div>
+        </section>
+
+        <!-- 结果区域 -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <h2 class="results-title">推荐集合地点</h2>
+            <div id="resultsList" class="results-list"></div>
+        </section>
+
+        <!-- 加载提示 -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>正在为您寻找最佳集合地点...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

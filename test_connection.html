@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 后端服务器连接测试</h1>
+    
+    <div id="status" class="status info">
+        正在检查服务器连接...
+    </div>
+    
+    <button onclick="testConnection()">重新测试</button>
+    
+    <h2>测试结果</h2>
+    <pre id="result"></pre>
+    
+    <h2>解决方案</h2>
+    <div class="status info">
+        <h3>如果连接失败，请按以下步骤操作：</h3>
+        <ol>
+            <li>打开终端，进入项目目录：<code>cd /Users/feifei/work/self-interest/letsmeet</code></li>
+            <li>安装依赖（如果还没安装）：<code>npm install</code></li>
+            <li>启动服务器：<code>npm start</code></li>
+            <li>看到 "服务器运行在 http://localhost:3000" 后，刷新此页面</li>
+        </ol>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            
+            statusDiv.className = 'status info';
+            statusDiv.textContent = '正在检查服务器连接...';
+            resultDiv.textContent = '';
+            
+            try {
+                // 测试根路径
+                const response = await fetch('http://localhost:3000/', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const contentType = response.headers.get('content-type');
+                const text = await response.text();
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = JSON.parse(text);
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ 服务器连接成功！';
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ 服务器返回了非JSON响应';
+                    resultDiv.textContent = '响应类型: ' + contentType + '\n\n响应内容:\n' + text.substring(0, 500);
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ 无法连接到服务器';
+                resultDiv.textContent = '错误信息: ' + error.message + '\n\n' +
+                    '可能的原因：\n' +
+                    '1. 后端服务器未启动（运行: npm start）\n' +
+                    '2. 服务器运行在不同的端口\n' +
+                    '3. 防火墙阻止了连接\n' +
+                    '4. CORS配置问题';
+            }
+        }
+        
+        // 页面加载时自动测试
+        window.onload = testConnection;
+    </script>
+</body>
+</html>
